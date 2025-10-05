@@ -44,16 +44,18 @@ const LearnBraille = () => {
     { id: 6, position: 'top-2/3 right-0' },
   ];
 
-  const handleDotPress = (dotId: number) => {
+  const handleDotPress = (dotId: number, isLongPress: boolean = false) => {
     const synth = window.speechSynthesis;
     const utterance = new SpeechSynthesisUtterance(`${t('dot')} ${dotId}`);
     synth.speak(utterance);
 
     if ('vibrate' in navigator) {
-      navigator.vibrate(100);
+      navigator.vibrate(isLongPress ? 200 : 100);
     }
 
-    setActiveDots((prev) => (prev.includes(dotId) ? prev.filter((id) => id !== dotId) : [...prev, dotId]));
+    if (!isLongPress) {
+      setActiveDots((prev) => (prev.includes(dotId) ? prev.filter((id) => id !== dotId) : [...prev, dotId]));
+    }
   };
 
   const startCategory = (selectedCategory: QuizCategory) => {
@@ -62,7 +64,26 @@ const LearnBraille = () => {
     setQuizItems(items);
     setCurrentItem(items[0]);
     setCurrentQuestionIndex(0);
+    setActiveDots(braillePatterns[items[0]]);
     setMode('learn');
+  };
+
+  const goToNextLearnItem = () => {
+    if (currentQuestionIndex < quizItems.length - 1) {
+      const nextIndex = currentQuestionIndex + 1;
+      setCurrentQuestionIndex(nextIndex);
+      setCurrentItem(quizItems[nextIndex]);
+      setActiveDots(braillePatterns[quizItems[nextIndex]]);
+    }
+  };
+
+  const goToPreviousLearnItem = () => {
+    if (currentQuestionIndex > 0) {
+      const prevIndex = currentQuestionIndex - 1;
+      setCurrentQuestionIndex(prevIndex);
+      setCurrentItem(quizItems[prevIndex]);
+      setActiveDots(braillePatterns[quizItems[prevIndex]]);
+    }
   };
 
   const checkAnswer = async () => {
@@ -210,23 +231,38 @@ const LearnBraille = () => {
 
         {(mode === 'learn' || mode === 'quiz') && (
           <>
-            {mode === 'quiz' && (
-              <div className="text-center mb-8">
-                <p className="text-2xl text-foreground" aria-live="polite">
-                  {t('createLetter')} {currentItem}
-                </p>
-                <p className="text-xl text-muted-foreground mt-2">
-                  {t('yourScore')}: {score} | Question {currentQuestionIndex + 1}/{quizItems.length}
-                </p>
-              </div>
-            )}
+            <div className="text-center mb-8">
+              {mode === 'learn' ? (
+                <>
+                  <p className="text-3xl font-bold text-foreground mb-4" aria-live="polite">
+                    {t('character')}: {currentItem}
+                  </p>
+                  <p className="text-xl text-muted-foreground">
+                    {t('dots')}: {braillePatterns[currentItem].join(', ')}
+                  </p>
+                  <p className="text-lg text-muted-foreground mt-2">
+                    {currentQuestionIndex + 1} / {quizItems.length}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="text-2xl text-foreground" aria-live="polite">
+                    {t('createLetter')} {currentItem}
+                  </p>
+                  <p className="text-xl text-muted-foreground mt-2">
+                    {t('yourScore')}: {score} | Question {currentQuestionIndex + 1}/{quizItems.length}
+                  </p>
+                </>
+              )}
+            </div>
 
             <div className="flex flex-col items-center gap-8">
               <div className="relative w-64 h-96 border-4 border-foreground rounded-lg">
                 {dots.map((dot) => (
                   <button
                     key={dot.id}
-                    onClick={() => handleDotPress(dot.id)}
+                    onClick={() => handleDotPress(dot.id, false)}
+                    onTouchStart={() => handleDotPress(dot.id, true)}
                     className={`absolute w-16 h-16 rounded-full border-4 border-foreground transition-all ${
                       activeDots.includes(dot.id) ? 'bg-foreground' : 'bg-background'
                     } ${dot.position}`}
@@ -235,6 +271,30 @@ const LearnBraille = () => {
                   />
                 ))}
               </div>
+
+              {mode === 'learn' && (
+                <div className="flex gap-4">
+                  <Button
+                    onClick={goToPreviousLearnItem}
+                    disabled={currentQuestionIndex === 0}
+                    size="lg"
+                    variant="secondary"
+                    className="text-xl"
+                    aria-label={t('previous')}
+                  >
+                    {t('previous')}
+                  </Button>
+                  <Button
+                    onClick={goToNextLearnItem}
+                    disabled={currentQuestionIndex === quizItems.length - 1}
+                    size="lg"
+                    className="text-xl"
+                    aria-label={t('next')}
+                  >
+                    {t('next')}
+                  </Button>
+                </div>
+              )}
 
               {showCorrectAnswer && (
                 <div className="text-center space-y-4">
