@@ -1,92 +1,151 @@
-# Setu - AI-Powered Accessibility Hub
+ # Setu — AI Accessibility Bridge
 
-Setu is a comprehensive web application designed to serve as an educational and assistive tool for individuals who are blind, deaf, or mute. Using AI technology, Setu breaks down communication barriers and provides accessible learning resources.
+ Setu is a web app that helps make communication and learning accessible for people with visual and hearing impairments. It combines computer vision (MediaPipe), interactive learning modules, and Supabase for authentication and user profiles to provide features like:
 
-## Features
+ - Multilingual UI (English and Kannada)
+ - User authentication (Sign up / Login) via Supabase
+ - Condition-based personalization (blind, deaf, mute)
+ - Dashboard with condition-specific modules and gamified points
+ - Learn Braille: tactile-friendly practice with speech and vibration feedback
+ - Braille Scanner: camera-based scanner (mock OCR in demo)
+ - Learn Sign Language: image/video demonstrations and real-time camera-based quizzes using hand detection and a gesture classifier
+ - Sign Translator: continuous, real-time sign-to-speech translation
 
-### For Blind Users
-- **Learn Braille**: Interactive Braille cell with haptic feedback and Text-to-Speech
-- **Braille to Speech Scanner**: Use your camera to scan Braille text and hear it spoken aloud
+ This repo is a Vite + React + TypeScript project scaffolded with shadcn/ui components and Tailwind CSS.
 
-### For Deaf Users
-- **Learn Sign Language**: Video tutorials teaching Indian Sign Language (ISL)
+ ## Quick links
 
-### For Mute Users
-- **Sign Language to Speech Translator**: Real-time translation of sign language to spoken words
+ - Source: this repository
+ - Main entry: `src/main.tsx`
+ - App routes: `src/App.tsx`
+ - Pages: `src/pages/*` (Welcome, LanguageSelection, Login, SignUp, ConditionSelection, Dashboard, LearnBraille, BrailleScanner, LearnSignLanguage, SignTranslator)
+ - Contexts: `src/contexts/*` (AuthContext, LanguageContext)
+ - Integrations: `src/integrations/supabase/*`
+ - Utilities: `src/utils/*` (ISL classifier, features)
 
-## Technology Stack
+ ## Requirements
 
-- **Frontend**: React with TypeScript, Vite, Tailwind CSS
-- **Backend**: Lovable Cloud (Supabase-based)
-- **Authentication**: Email/Password authentication
-- **Database**: PostgreSQL with Row Level Security
-- **UI**: Shadcn/ui components with high-contrast black/white theme
+ - Node.js (LTS recommended)
+ - npm, pnpm or yarn (examples below use npm)
+ - A Supabase project for auth and the `profiles` table used by the app
+ - Browser with camera and Web Speech API support for the interactive modules
 
-## Accessibility Features
+ ## Environment variables
 
-- 100% screen reader compatible (VoiceOver/TalkBack)
-- High-contrast black and white design
-- Large tap targets (minimum 44x44px)
-- Comprehensive ARIA labels
-- Haptic feedback support
-- Text-to-Speech integration
-- Bilingual support (English and Kannada)
+ Create a `.env` (or `.env.local`) file in the project root and add these variables. The app expects them as Vite environment variables:
 
-## Setup Instructions
+ - VITE_SUPABASE_URL - your Supabase project URL
+ - VITE_SUPABASE_ANON_KEY - your Supabase anon/public key
 
-1. **Install Dependencies**
-   ```bash
-   npm install
-   ```
+ Example (.env):
 
-2. **Run Development Server**
-   ```bash
-   npm run dev
-   ```
+ ```powershell
+ VITE_SUPABASE_URL=https://your-project.supabase.co
+ VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+ ```
 
-3. **Backend Configuration**
-   The backend is automatically configured through Lovable Cloud. Authentication and database are pre-configured.
+ Notes:
+ - The repo contains a `supabase/` folder with SQL migrations and a small function (`functions/validate-sign`) used by the backend logic in some flows. Review and deploy these to your Supabase project if you want parity with the app.
 
-## User Flow
+ ## Install
 
-1. **Welcome Screen**: Alternating greeting in English and Kannada
-2. **Language Selection**: Choose between English and Kannada
-3. **Authentication**: Sign up or login with email/password
-4. **Condition Selection**: Select applicable conditions (Blind, Deaf, Mute)
-5. **Dashboard**: Access personalized modules based on selected conditions
+ In PowerShell (Windows):
 
-## Database Schema
+ ```powershell
+ cd "c:\Users\Rekha Poornesh\Downloads\setu-access-aid-73503-05760-79170-58223-29048"
+ npm install
+ ```
 
-### profiles
-- `id`: UUID (Primary Key)
-- `user_id`: UUID (References auth.users)
-- `email`: TEXT
-- `language_preference`: TEXT ('en' or 'kn')
-- `conditions`: TEXT[] (Array of selected conditions)
-- `created_at`: TIMESTAMPTZ
-- `updated_at`: TIMESTAMPTZ
+ ## Development
 
-## Security
+ Start the dev server with hot reload:
 
-- Row Level Security (RLS) enabled on all tables
-- Users can only access their own data
-- Email confirmation is auto-enabled for testing
-- Secure password authentication
+ ```powershell
+ npm run dev
+ ```
 
-## Mobile Deployment
+ The app should be available at http://localhost:5173 (Vite default) unless configured otherwise.
 
-This app is built as a responsive web application and can be deployed to iOS and Android using Capacitor.
+ ## Build / Preview
 
-## Future Enhancements
+ Build for production:
 
-- Integration with real AI models for Braille OCR
-- Live sign language translation using computer vision
-- Expanded Braille learning curriculum
-- Video library for ISL tutorials
-- Offline mode support
+ ```powershell
+ npm run build
+ ```
 
----
+ Preview a production build locally:
 
-## Project info
+ ```powershell
+ npm run preview
+ ```
 
-**URL**: https://lovable.dev/projects/6f08c3dc-e34b-4bf9-8af6-0e8b03c0212a
+ ## Available scripts (from package.json)
+
+ - `dev`: run the Vite dev server
+ - `build`: build production assets
+ - `build:dev`: build in development mode
+ - `preview`: preview the production build
+ - `lint`: run ESLint across the repo
+
+ ## Key architecture notes
+
+ - Routing: `react-router-dom` is used. Routes are declared in `src/App.tsx` with a `ProtectedRoute` wrapper for authenticated pages.
+ - Authentication: `src/contexts/AuthContext.tsx` uses Supabase client (`src/integrations/supabase/client`) for sign up, sign in and session management.
+ - Internationalization: `src/contexts/LanguageContext.tsx` provides a tiny translation map for English (`en`) and Kannada (`kn`) and a `t()` helper. Pages use `useLanguage()` for translations.
+ - Hand detection & classification: `src/hooks/useHandDetection.tsx`, `src/utils/islGestureClassifier.ts` and `src/utils/islGestureFeatures.ts` provide MediaPipe integration and a small classifier. The `SignTranslator` and `LearnSignLanguage` pages use these to detect, smooth and classify gestures in real-time.
+ - Braille learning: `src/pages/LearnBraille.tsx` implements interactive dot pressing, speech feedback (Web Speech API), and a simple points system. Points are written to Supabase via an RPC (`add_user_points`) in the demo code.
+ - Braille scanning: `src/pages/BrailleScanner.tsx` contains a camera view and mock OCR. Replace the mock with an actual OCR pipeline or MediaPipe model as needed.
+
+ ## Accessibility considerations
+
+ - ARIA attributes and live regions are used across pages to announce dynamic content for screen readers.
+ - The Welcome page contains a clear notice for deaf-blind users advising use of a refreshable Braille display.
+ - Controls have large touch targets and high-contrast UI provided by Tailwind + the design system.
+ - Speech synthesis and optional vibration are used to provide multimodal feedback for interactions.
+
+ ## Database notes (Supabase)
+
+ - The app expects a `profiles` table with at least these columns: `id`, `user_id` (auth UUID), `email`, `conditions` (string[]), `language_preference`, `points` (integer).
+ - The project includes SQL migration files under `supabase/migrations/` which you can apply to your Supabase project.
+ - There are serverless functions under `supabase/functions/`; review and deploy them if required by your setup.
+
+ ## Assets
+
+ - Sign images and videos are stored under `src/assets/signs/` and are referenced from the sign learning and translator pages.
+
+ ## Testing & Quality
+
+ - ESLint is configured (see `eslint.config.js`). Run `npm run lint` to check code quality.
+ - The project uses TypeScript—ensure your editor runs the TS server for type checks.
+
+ ## Contributing
+
+ - Open an issue for feature requests or bugs.
+ - Fork and create a PR with clear tests or manual verification steps.
+ - Keep changes small and focused. Update migrations if you add DB changes.
+
+ ## Troubleshooting
+
+ - Camera access: make sure your browser has permission to use the camera. On Windows, use a modern Chromium-based browser.
+ - Speech synthesis: the Web Speech API varies between browsers. Chrome/Edge have the best support.
+ - Supabase errors: verify `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` are correct and your CORS/auth settings allow the app origins.
+
+ ## Next steps / improvements
+
+ - Replace the mock OCR in `BrailleScanner` with a real OCR/ML model for Braille detection.
+ - Add unit/integration tests for critical logic (Auth flows, classifier smoothing, DB RPCs).
+ - Improve the ISL classifier with a larger dataset and model export.
+ - Add CI to run linting and type checks on PRs.
+
+ ## License
+
+ This repository does not include a license file. Add a suitable open-source license (MIT, Apache-2.0, etc.) in `LICENSE` if you plan to publish the project.
+
+ --
+ 
+ If you'd like, I can also:
+ - create a `CONTRIBUTING.md` and `CODE_OF_CONDUCT.md` template,
+ - add a quick start script that verifies environment variables and Supabase connectivity,
+ - or wire up a simple CI YAML to run lint and type checks on push/PR.
+
